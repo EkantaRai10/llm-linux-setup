@@ -4,6 +4,9 @@ WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo -e "Working directory: $WORK_DIR \n"
 cd "$WORK_DIR"
 
+# ---- Make scripts executable ----
+chmod +x "$WORK_DIR"/inference/*.sh "$WORK_DIR"/deploy/*.sh
+
 echo -e "==> Installing dependencies for llama.cpp \n"
 sudo apt-get update
 sudo apt-get install -y \
