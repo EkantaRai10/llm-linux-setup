@@ -73,7 +73,8 @@ RestartSec=5
 [Install]
 WantedBy=multi-user.target
 EOF
-
+sudo chown "$SERVICE_USER":"$SERVICE_USER" "$WORK_DIR/config/inference.env"
+sudo chmod 644 "$WORK_DIR/config/inference.env"
 sudo systemctl daemon-reload
 sudo systemctl enable llama.service
 sudo systemctl restart llama.service
