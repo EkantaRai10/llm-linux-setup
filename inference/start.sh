@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-
 set -euo pipefail
+
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+KEYS_FILE="$PROJECT_DIR/config/api-keys.txt"
 
 source "$PROJECT_DIR/config/inference.env"
 
@@ -15,6 +16,11 @@ if [[ ! -x "$LLAMA_SERVER" ]]; then
     exit 1
 fi
 
+if [[ ! -s "$KEYS_FILE" ]]; then
+    echo "ERROR: API keys file missing or empty: $KEYS_FILE"
+    exit 1
+fi
+
 echo "Starting GKavach AI Inference Service..."
 echo "Model: $MODEL_PATH"
 echo "Endpoint: http://$HOST:$PORT"
@@ -25,5 +31,5 @@ exec "$LLAMA_SERVER" \
     --port "$PORT" \
     -c "$CONTEXT_SIZE" \
     -np "$PARALLEL_SLOTS" \
-    -t "$THREADS"\
-    --api-key-file "$PROJECT_DIR/config/api-keys.txt"
+    -t "$THREADS" \
+    --api-key-file "$KEYS_FILE"

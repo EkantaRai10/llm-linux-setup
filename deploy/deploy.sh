@@ -55,6 +55,33 @@ fi
 
 # ---- systemd service ----
 SERVICE_USER="${SUDO_USER:-$(id -un)}"
+
+# ---- Create API keys file if missing ----
+KEYS_FILE="$WORK_DIR/config/api-keys.txt"
+
+if [[ ! -f "$KEYS_FILE" ]]; then
+    echo -e "\n==> Creating $KEYS_FILE"
+    mkdir -p "$WORK_DIR/config"
+    : > "$KEYS_FILE"
+
+    echo "Enter API keys one per line. Press Enter on an empty line to finish."
+    while true; do
+        read -rsp "API key: " KEY || break
+        echo
+        [[ -z "$KEY" ]] && break
+        echo "$KEY" >> "$KEYS_FILE"
+    done
+
+    if [[ ! -s "$KEYS_FILE" ]]; then
+        echo "WARNING: No keys entered. The server will run WITHOUT authentication."
+    fi
+
+    sudo chown "$SERVICE_USER":"$SERVICE_USER" "$KEYS_FILE"
+    chmod 600 "$KEYS_FILE"
+else
+    echo -e "\n==> Using existing $KEYS_FILE"
+fi
+
 echo -e "\n==> Creating systemd service"
 
 sudo tee /etc/systemd/system/llama.service > /dev/null <<EOF
