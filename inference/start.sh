@@ -25,4 +25,5 @@ exec "$LLAMA_SERVER" \
     --port "$PORT" \
     -c "$CONTEXT_SIZE" \
     -np "$PARALLEL_SLOTS" \
-    -t "$THREADS"
+    -t "$THREADS"\
+    --api-key-file "$PROJECT_DIR/config/api-keys.txt"

@@ -1,3 +1,5 @@
 config/inference.env
 inference/llama.cpp/
 models/Phi-3-mini-4k-instruct-fp16.gguf
+models/qwen2.5-1.5b-instruct-fp16.gguf
+config/api-keys.txt

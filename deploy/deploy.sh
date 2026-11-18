@@ -4,8 +4,7 @@ WORK_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 echo -e "Working directory: $WORK_DIR \n"
 cd "$WORK_DIR"
 
-echo -e "==> Installing dependencies for llama.cpp Install C++ build prerequisites (Debian/Ubuntu example) \n"
-# 1. Install C++ build prerequisites (Debian/Ubuntu example)
+echo -e "==> Installing dependencies for llama.cpp \n"
 sudo apt-get update
 sudo apt-get install -y \
     git \
@@ -18,29 +17,46 @@ if [ ! -d "llama.cpp" ]; then
     git clone https://github.com/ggml-org/llama.cpp.git
 fi
 cd "$WORK_DIR/inference/llama.cpp"
-# if ! command -v cmake &> /dev/null; then
-#     echo "CMake is not installed. Installing..."
-#     sudo apt-get update
-#     sudo apt-get install -y git build-essential cmake
-# else
-#     echo "CMake is already installed."
-# fi
 
 echo -e "==> Building llama.cpp \n"
 cmake -B build
 cmake --build build --config Release -j"$(nproc)"
-
-
 echo "==> Build completed. Binary: $WORK_DIR/inference/llama.cpp/build/bin/llama-server"
-# # Create a user for the inference service
-# if ! id -u llama &>/dev/null; then
-#     sudo useradd -m -s /bin/bash llama
-#     sudo chown -R llama:llama "$WORK_DIR/inference/llama.cpp"
-#     echo "User 'llama' created successfully."
-# fi
+
+# ---- Create env file if missing ----
+ENV_FILE="$WORK_DIR/config/inference.env"
+
+if [[ ! -f "$ENV_FILE" ]]; then
+    echo -e "\n==> Creating $ENV_FILE"
+    mkdir -p "$WORK_DIR/config"
+
+    DEFAULT_MODEL="$HOME/models/model.gguf"
+
+    read -rp "Model path [$DEFAULT_MODEL]: " MODEL_PATH
+    read -rp "Host [127.0.0.1]: " HOST
+    read -rp "Port [8080]: " PORT
+    read -rp "Context size [4096]: " CONTEXT_SIZE
+    read -rp "Parallel slots [1]: " PARALLEL_SLOTS
+    read -rp "Threads [$(nproc)]: " THREADS
+
+    cat > "$ENV_FILE" <<EOF
+LLAMA_SERVER="$WORK_DIR/inference/llama.cpp/build/bin/llama-server"
+MODEL_PATH="${MODEL_PATH:-$DEFAULT_MODEL}"
+HOST="${HOST:-127.0.0.1}"
+PORT="${PORT:-8080}"
+CONTEXT_SIZE="${CONTEXT_SIZE:-4096}"
+PARALLEL_SLOTS="${PARALLEL_SLOTS:-1}"
+THREADS="${THREADS:-$(nproc)}"
+EOF
+    chmod 600 "$ENV_FILE"
+else
+    echo -e "\n==> Using existing $ENV_FILE"
+fi
+
+# ---- systemd service ----
 SERVICE_USER="${SUDO_USER:-$(id -un)}"
-echo "==> Creating systemd service for the inference service"
-# Create a systemd service file for the inference service
+echo -e "\n==> Creating systemd service"
+
 sudo tee /etc/systemd/system/llama.service > /dev/null <<EOF
 [Unit]
 Description=GKavach AI Inference Service
@@ -59,5 +75,7 @@ WantedBy=multi-user.target
 EOF
 
 sudo systemctl daemon-reload
-sudo systemctl enable --now llama.service
+sudo systemctl enable llama.service
+sudo systemctl restart llama.service
 
+echo -e "\n==> Done. Check status with: systemctl status llama"
