@@ -27,6 +27,7 @@ echo "Endpoint: http://$HOST:$PORT"
 
 exec "$LLAMA_SERVER" \
     -m "$MODEL_PATH" \
+    --mmproj "$MMPROJ_PATH" \
     --host "$HOST" \
     --port "$PORT" \
     -c "$CONTEXT_SIZE" \
